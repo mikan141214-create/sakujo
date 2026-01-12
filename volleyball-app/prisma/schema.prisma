@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id            String      @id @default(cuid())
+  name          String
+  number        Int         @unique
+  position      String      // OH, OP, MB, S, L
+  handedness    String      @default("right") // right, left
+  height        Int?
+  memo          String?
+
+  // Skills (0-100)
+  spike         Int         @default(50)
+  block         Int         @default(50)
+  receive       Int         @default(50)
+  serve         Int         @default(50)
+  toss          Int         @default(50)
+  connect       Int         @default(50) // つなぎ
+  decision      Int         @default(50) // 判断
+
+  conditions    Condition[]
+  formationPositions FormationPosition[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Condition {
+  id          String    @id @default(cuid())
+  playerId    String
+  player      Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  date        DateTime
+  health      Int       @default(3) // 1-5
+  fatigue     Int       @default(3) // 1-5
+  pain        Int       @default(0) // 0-5
+  painArea    String?
+  motivation  Int       @default(3) // 1-5
+  memo        String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([playerId, date])
+  @@index([playerId])
+  @@index([date])
+}
+
+model Formation {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+
+  positions   FormationPosition[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model FormationPosition {
+  id          String    @id @default(cuid())
+  formationId String
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  playerId    String
+  player      Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  position    Int       // 1-6 (court position)
+  isLibero    Boolean   @default(false)
+  liberoFor   Int?      // リベロが交代する位置
+
+  @@unique([formationId, position])
+  @@index([formationId])
+}
